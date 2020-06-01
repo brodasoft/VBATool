@@ -8,11 +8,11 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Private Const CLS_ID As Long = 401
-Private Const CLS_VER As String = "0.42"
-Private Const CLS_NAME As String = "cVersionTracker"
-Private Const CLS_DATE As Date = #2/21/2019#
+Private Const CLS_VER As String = "0.44"
+Private Const CLS_NAME As String = "VersionTracker"
+Private Const CLS_DATE As Date = #6/1/2020#
 Private Const CLS_SKP As Boolean = True
-Private Const CLS_CFG As String = "0"
+Private Const CLS_CFG As String = "1"
 '----------------------------------------------------------------
 '0. Class by default is working on project (file) level, to work module level us option from #3.
 '   In module level version check if for all modules with const CLS_ID in row 1
@@ -64,7 +64,8 @@ Private cPObj As Object
 Private cModuleName As String
 Private cDbPath As String
 Private cDbPass As String
-Private VerCheck As Boolean
+Private cVerCheck As Boolean
+Private cDomain As String
 
 Private Const APP_ID As String = "AppID"
 Private Const APP_VER As String = "AppVer"
@@ -73,7 +74,6 @@ Private Const APP_DATE As String = "AppDate"
 Private Const APP_SKP As String = "AppSkp"
 Private Const APP_CFG As String = "AppCfg"
 Private Const SEP As String = "|"
-Private Const INI_PATH As String = "\\teamsites-east.mercer.com\DavWWWRoot\sites\WarsawOpsCenter\Shared Documents\VBATeam\vbateam.ini"
 
 'ini
 Private Sub Class_Initialize()
@@ -106,9 +106,11 @@ Private Sub Class_Initialize()
         cPropDic.Add APP_SKP, "5" & SEP & "CLS_SKP" & SEP & "Boolean" & SEP & vbNullString
         cPropDic.Add APP_CFG, "6" & SEP & "CLS_CFG" & SEP & "String" & SEP & """"
     End If
+    'set domain
+    cDomain = GetDomain()
     'get ini values
-    cDbPath = GetINI(INI_PATH, "MACRODB_PATH")
-    cDbPass = GetINI(INI_PATH, "MACRODB_PASS")
+    cDbPath = GetINI("MACRODB_PATH")
+    cDbPass = GetINI("MACRODB_PASS")
 End Sub
 
 Private Sub Class_Terminate()
@@ -139,13 +141,13 @@ Property Get AppDateGet() As String
     AppDateGet = GetProp(APP_DATE)
 End Property
 
-Property Get AppCfgGet() As String
+Property Get AppCfgGet() As tCfgType
     On Error Resume Next
     AppCfgGet = GetProp(APP_CFG)
 End Property
 
 Property Get msgB() As String
-    msgB = " ([" & AppIDGet & "] " & AppNameGet & " ver. " & AppVerGet & " #" & AppDateGet & "#)" & vbLf
+    msgB = IIf(AppCfgGet = 0, "DebugMode", "ReleseMode") & " => ([" & AppIDGet & "] " & AppNameGet & " ver. " & AppVerGet & " #" & AppDateGet & "#)" & vbLf
 End Property
 
 Property Get IsModule() As String
@@ -171,7 +173,7 @@ Sub CheckDBVer()
     Dim OldcModuleName As String
     Dim OldcAppType As tAppType
     
-    If VerCheck Then Exit Sub
+    If cVerCheck Then Exit Sub
     
     If cModDic.Count > 0 Then
         OldcAppType = cAppType
@@ -224,7 +226,7 @@ Sub CheckDBVer()
                 
     Next cnt
     
-    VerCheck = True
+    cVerCheck = True
     
     If cModDic.Count > 0 Then
         cModuleName = OldcModuleName
@@ -240,7 +242,13 @@ Sub SaveFile(Optional NoVer As Boolean)
         
     name = gVt.AppNameGet
     ver = gVt.AppVerGet
-    If name = SEP Or ver = vbNullString Then
+    If ver = SEP Then
+        gVt.AppIDSet "0"
+        gVt.AppVerSet "0.01"
+        gVt.AppCfgSet "0"
+        ver = gVt.AppVerGet
+    End If
+    If name = SEP Or ver = vbNullString Or ver = SEP Then
         MsgBox "Missing AppName or AppVer", vbCritical, msgB
     Else
         If cAppType = ExcelFile Then
@@ -286,12 +294,12 @@ End Sub
 
 Sub AppNameSet(name As String)
     Call SetProp(APP_NAME, name)
-    Call SetProp(APP_DATE, Date)
+    Call SetProp(APP_DATE, Format(Date, "m\/d\/yyyy"))
 End Sub
 
 Sub AppIDSet(id As String)
     Call SetProp(APP_ID, id)
-    Call SetProp(APP_DATE, Date)
+    Call SetProp(APP_DATE, Format(Date, "m\/d\/yyyy"))
 End Sub
 
 Sub AppCfgSet(cfg As tCfgType)
@@ -302,6 +310,7 @@ Sub AppCfgSet(cfg As tCfgType)
         tCfg = 0
     End If
     Call SetProp(APP_CFG, tCfg)
+    If AppIDGet > 0 And AppCfgGet = ReleseMode Then Call SetDBVer(AppVerGet)
 End Sub
 
 'private
@@ -329,8 +338,8 @@ Private Sub AppVerPut(verMajor As Boolean, Optional manualVer As String)
         Call SetProp(APP_VER, ver)
     End If
         
-    Call SetProp(APP_DATE, Date)
-    If AppIDGet > 0 And AppCfgGet = "1" Then Call SetDBVer(ver)
+    Call SetProp(APP_DATE, Format(Date, "m\/d\/yyyy"))
+    If AppIDGet > 0 And AppCfgGet = ReleseMode Then Call SetDBVer(ver)
     Debug.Print msgB
 End Sub
 
@@ -423,7 +432,7 @@ err_h:
     ElseIf Err.Number = 998 Then
     
     Else
-        MsgBox "You aren't connected to MMC network. Macro version can't be checked.", vbCritical, msgB
+        MsgBox "Error:" & Err.Description, vbCritical, msgB
     End If
     Resume ende
 End Function
@@ -545,12 +554,16 @@ Private Function FileExtStr(FF As Byte) As String
     End If
 End Function
 
-Private Function GetINI(file As String, id As String) As String
+Private Function GetINI(id As String) As String
     Dim arr As Variant
     Dim ln As String
-    
+    Dim file As String
     On Error Resume Next
     
+    Select Case cDomain
+    Case Is = "EU": file = "c:\Enron\_Prv\_Projekt\_DB\vbateam.ini"
+    Case Is = "MERCER": file = "\\teamsites-east.mercer.com\DavWWWRoot\sites\WarsawOpsCenter\Shared Documents\VBATeam\vbateam.ini"
+    End Select
     Open file For Input As #1
     
     Do
@@ -563,6 +576,9 @@ Private Function GetINI(file As String, id As String) As String
     Loop Until EOF(1)
     
     Close #1
+End Function
+Private Function GetDomain() As String
+    GetDomain = Environ("USERDOMAIN")
 End Function
 
 Private Function VBATrusted() As Boolean
@@ -602,5 +618,12 @@ Private Function GetProjectPath(vbproject As Object) As String
     On Error Resume Next
     GetProjectPath = vbproject.fileName
 End Function
+
+
+
+
+
+
+
 
 

@@ -8,11 +8,11 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Private Const CLS_ID As Long = 428
-Private Const CLS_VER As String = "3.25"
-Private Const CLS_NAME As String = "cEnronExcel"
-Private Const CLS_DATE As Date = #2/21/2019#
+Private Const CLS_VER As String = "3.26"
+Private Const CLS_NAME As String = "EnronExcel"
+Private Const CLS_DATE As Date = #6/1/2020#
 Private Const CLS_SKP As Boolean = True
-Private Const CLS_CFG As String = "0"
+Private Const CLS_CFG As String = "1"
 
 '- excel speeding options
 '- file open

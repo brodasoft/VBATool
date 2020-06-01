@@ -19,9 +19,9 @@ End Sub
 
 Private Sub clsMEnronExcel()
     gVt.IsModule = "cEnronExcel"
-    'gvt.AppCfgSet DebugMode
-    gVt.AppVerMinor
-    'gvt.CheckDBVer
+    gVt.AppCfgSet ReleseMode
+    'gVt.AppVerMinor
+    'gVt.CheckDBVer
     Debug.Print gVt.msgB
     
     Set gVt = Nothing
@@ -30,20 +30,23 @@ End Sub
 Private Sub prcMVersionTracker()
     
     gVt.IsModule = "cVersionTracker"
-    'gvt.AppCfgSet DebugMode
-    gVt.AppVerMinor
-    'gvt.CheckDBVer
+    gVt.AppCfgSet ReleseMode
+    'gVt.AppVerMinor
+    'gVt.CheckDBVer
     Debug.Print gVt.msgB
     
     Set gVt = Nothing
 End Sub
 
 Private Sub prcMMakra()
-    'gvt.AppCfgSet DebugMode
-    gVt.AppVerMinor
+    
+    gVt.IsModule = ""
+    gVt.AppCfgSet ReleseMode
+    'gVt.AppVerMinor
     gVt.SaveFile
-    'gvt.CheckDBVer
-    'gvt.AppNameSet "Makra"
+    gVt.CheckDBVer
+    
+
     Debug.Print gVt.msgB
     
     Set gVt = Nothing
@@ -53,8 +56,7 @@ Private Sub prcMExcelAppEvents()
     
     gVt.IsModule = "cExcelAppEvents"
     'gvt.AppCfgSet DebugMode
-    'gvt.AppVerSet "0.23"
-    gVt.AppVerMinor
+    'gVt.AppVerMinor
     'gvt.CheckDBVer
     Debug.Print gVt.msgB
     
@@ -63,6 +65,7 @@ End Sub
 
 Public Sub prcUnlockVBA()
     Dim wb As Workbook
+    If gEae Is Nothing Then Workbook_Initialize
     For Each wb In gEae.cApp.Workbooks
         If wb.MultiUserEditing = False And wb.vbproject.Protection = vbext_pp_locked Then              'workbook isn't shared, no access to VBA
             MultiPassUnlockProject wb.vbproject, Array("warsaw2015", getFolderPass(wb), getFolderPass(wb, True), "warsaw2014", "january88", "athens297", "boston76")
