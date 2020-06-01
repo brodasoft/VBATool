@@ -10,11 +10,13 @@ Sub Workbook_Initialize()
 End Sub
 
 Sub Workbook_Terminate()
+    gEae.cApp.OnKey "^%{BS}"
+    
     Set gEae = Nothing
     Set gEnron = Nothing
     Set gVt = Nothing
     
-    gEae.cApp.OnKey "^%{BS}"
+    
 End Sub
 
 Private Sub clsMEnronExcel()
@@ -41,10 +43,10 @@ End Sub
 Private Sub prcMMakra()
     
     gVt.IsModule = ""
-    gVt.AppCfgSet ReleseMode
+    'gVt.AppCfgSet ReleseMode
     'gVt.AppVerMinor
     gVt.SaveFile
-    gVt.CheckDBVer
+    'gVt.CheckDBVer
     
 
     Debug.Print gVt.msgB
