@@ -1,0 +1,10 @@
+﻿Option Explicit
+
+Private Sub Workbook_BeforeClose(Cancel As Boolean)
+    Workbook_Terminate
+End Sub
+
+Private Sub Workbook_Open()
+    Workbook_Initialize
+End Sub
+
